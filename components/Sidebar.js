@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   HomeIcon,
   SearchIcon,
@@ -8,10 +8,26 @@ import {
   RssIcon,
 } from "@heroicons/react/outline";
 import { signOut, useSession } from "next-auth/react";
+import useSpotify from "../hooks/useSpotify";
+import { useRecoilState } from "recoil";
+import { playlistIdState } from "../atoms/playlistAtom";
 
 const Sidebar = () => {
+  const spotifyApi = useSpotify();
   const { data: session, status } = useSession();
-  console.log(session);
+  const [playlists, setPlaylists] = useState([]);
+  const [playlistId, setPlaylistId] = useRecoilState(playlistIdState);
+
+  useEffect(() => {
+    if (spotifyApi.getAccessToken()) {
+      spotifyApi.getUserPlaylists().then((data) => {
+        setPlaylists(data.body.items);
+      });
+    }
+  }, [session, spotifyApi]);
+
+  console.log("you picked playlist", playlistId);
+
   return (
     <div
       className="text-gray-500 p-5 text-sm border-r border-gray-900 overflow-y-scroll h-screen
@@ -52,12 +68,15 @@ const Sidebar = () => {
         <hr className="border-t-[0.1px] border-gray-900" />
 
         {/* playlists */}
-        <p className="cursor-pointer hover:text-white">2021 Wrapped</p>
-        <p className="cursor-pointer hover:text-white">2022 Wrapped</p>
-        <p className="cursor-pointer hover:text-white">2023 Wrapped</p>
-        <p className="cursor-pointer hover:text-white">2024 Wrapped</p>
-        <p className="cursor-pointer hover:text-white">2025 Wrapped</p>
-        <p className="cursor-pointer hover:text-white">2026 Wrapped</p>
+        {playlists.map((playlist) => (
+          <p
+            className="cursor-pointer hover:text-white"
+            onClick={() => setPlaylistId(playlist.id)}
+            key={playlist.id}
+          >
+            {playlist.name}
+          </p>
+        ))}
       </div>
     </div>
   );
